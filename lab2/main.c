@@ -4,34 +4,54 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-int main() {
-    pid_t pid;
-    int rv;
+#include <limits.h>
+
+struct Program {
+    char prog_name[NAME_MAX + 1];
+    char *arv[10];
+};
+
+void create_processes(int prog_count, int repeat_count, struct Program programs[])
+{
     int status;
+    int index = 0, repeat = 0;
+
+    pid_t pid;
     pid_t parent_pid = getpid();
-    printf("START\n");
 
-    printf("parent PID = %d\n", parent_pid);
-
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < prog_count * repeat_count; ++i) {
         if (getpid() == parent_pid) {
+
             pid = fork();
 
             if (pid == -1) {
                 perror("fork");
                 exit(1);
-            } else if (pid == 0) {
-                printf("CHILD: pid = %d, PID = %d, PPID = %d\n", pid, getpid(),
-                       getppid());
-                sleep(7);
-                exit(228);
-            } else if (getpid() == parent_pid) {
-                printf("HERE_FOR\n");
-                printf("PARENT: PID = %d\n", getpid());
+            }
+            else if (pid == 0) {
+                printf("CHILD: PID = %d, PPID = %d\n", getpid(), getppid());
+                execv(programs[index].prog_name, programs[index].arv);
+            }
+            else if (getpid() == parent_pid) {
+                if (++repeat == repeat_count) {
+                    repeat = 0;
+                    index++;
+                }
                 waitpid(pid, &status, 0);
-                printf("status = %d\n", WEXITSTATUS(status));
+                printf("Status = %d\n", WEXITSTATUS(status));
             }
         }
     }
+}
+
+int main()
+{
+    struct Program programs[4] = {{"child", {"child", "0", NULL}},
+    {"child", {"child", "1", NULL}},
+    {"child", {"child", "2", NULL}},
+    {"child", {"child", "3", NULL}}};
+
+    create_processes(4, 2, programs);
+
     return 0;
 }
