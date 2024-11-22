@@ -6,52 +6,30 @@
 
 #include <limits.h>
 
+#define BLOCK_PARENT 1
+#define REPEAT 2
+#define PROGRAMS_COUNT 4
+
 struct Program {
     char prog_name[NAME_MAX + 1];
     char *arv[10];
 };
 
-void create_processes(int prog_count, int repeat_count, struct Program programs[])
-{
-    int status;
-    int index = 0, repeat = 0;
+void create_processes(int prog_count, int repeat_count,
+                      struct Program programs[], int block_parent);
 
-    pid_t pid;
-    pid_t parent_pid = getpid();
+int main() {
+    struct Program programs[PROGRAMS_COUNT] = {{"child", {"child", "0", NULL}},
+                                               {"child", {"child", "1", NULL}},
+                                               {"child", {"child", "2", NULL}},
+                                               {"child", {"child", "3", NULL}}};
 
-    for (int i = 0; i < prog_count * repeat_count; ++i) {
-        if (getpid() == parent_pid) {
+    create_processes(PROGRAMS_COUNT, REPEAT, programs, BLOCK_PARENT);
 
-            pid = fork();
-
-            if (pid == -1) {
-                perror("fork");
-                exit(1);
-            }
-            else if (pid == 0) {
-                printf("CHILD: PID = %d, PPID = %d\n", getpid(), getppid());
-                execv(programs[index].prog_name, programs[index].arv);
-            }
-            else if (getpid() == parent_pid) {
-                if (++repeat == repeat_count) {
-                    repeat = 0;
-                    index++;
-                }
-                waitpid(pid, &status, 0);
-                printf("Status = %d\n", WEXITSTATUS(status));
-            }
-        }
+    for (int i = 0; i < 5; ++i) {
+        printf("NON CHILD process making some actions...\n");
+        sleep(1);
     }
-}
-
-int main()
-{
-    struct Program programs[4] = {{"child", {"child", "0", NULL}},
-    {"child", {"child", "1", NULL}},
-    {"child", {"child", "2", NULL}},
-    {"child", {"child", "3", NULL}}};
-
-    create_processes(4, 2, programs);
 
     return 0;
 }
