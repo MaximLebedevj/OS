@@ -1,6 +1,4 @@
-# Минимальная версия CMake
 cmake_minimum_required(VERSION 3.10)
-
 project(Processes)
 
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
